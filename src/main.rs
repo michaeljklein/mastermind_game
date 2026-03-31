@@ -186,7 +186,10 @@ impl Default for Score {
 
 
 fn main() {
-    let seed = [42u8; 32];
+    let mut seed = [42u8; 32];
+
+    rand::fill(&mut seed[..]);
+
     let mut game_state = GameState::new(seed);
     println!("{:?}", game_state.goal_row);
     for _ in 0..10 {

@@ -25,6 +25,8 @@ pub enum Color {
     Two,
     Three,
     Four,
+    Five,
+    Six,
 }
 
 impl Display for Color {
@@ -34,38 +36,44 @@ impl Display for Color {
             Color::Two => write!(f, "2"),
             Color::Three => write!(f, "3"),
             Color::Four => write!(f, "4"),
+            Color::Five => write!(f, "5"),
+            Color::Six => write!(f, "6"),
         }
     }
 }
 
 impl Color {
     fn rand(rng: &mut ChaCha20Rng) -> Color {
-        let y: u8 = rng.random_range(1..=4);
+        let y: u8 = rng.random_range(1..=6);
         match y {
             1 => Color::One,
             2 => Color::Two,
             3 => Color::Three,
             4 => Color::Four,
-            other => panic!("Color::rand: expected 1-4, but found {other}")
+            5 => Color::Five,
+            6 => Color::Six,
+            other => panic!("Color::rand: expected 1-6, but found {other}")
         }
     }
 
-    pub fn count(&self) -> [u8; 4] {
+    pub fn count(&self) -> [u8; 6] {
         match self {
-            Color::One => [1, 0, 0, 0],
-            Color::Two => [0, 1, 0, 0],
-            Color::Three => [0, 0, 1, 0],
-            Color::Four => [0, 0, 0, 1],
+            Color::One => [1, 0, 0, 0, 0, 0],
+            Color::Two => [0, 1, 0, 0, 0, 0],
+            Color::Three => [0, 0, 1, 0, 0, 0],
+            Color::Four => [0, 0, 0, 1, 0, 0],
+            Color::Five => [0, 0, 0, 0, 1, 0],
+            Color::Six => [0, 0, 0, 0, 0, 1],
         }
     }
 
-    pub fn combine_counts(xs: [u8; 4], ys: [u8; 4]) -> [u8; 4] {
+    pub fn combine_counts(xs: [u8; 6], ys: [u8; 6]) -> [u8; 6] {
         xs.into_iter().zip(ys.into_iter()).map(|(x, y)| {
             x + y
-        }).collect::<Vec<_>>().try_into().expect("expected that zipping two arrays of 4 elements would be 4 elements")
+        }).collect::<Vec<_>>().try_into().expect("expected that zipping two arrays of 6 elements would be 6 elements")
     }
 
-    pub fn compare_counts(goal_counts: [u8; 4], guess_counts: [u8; 4]) -> [u8; 4] {
+    pub fn compare_counts(goal_counts: [u8; 6], guess_counts: [u8; 6]) -> [u8; 6] {
         goal_counts.into_iter().zip(guess_counts.into_iter()).map(|(goal_count, guess_count)| {
             // num_correct_guess = largest x: x <= guess_count and x <= goal_count ??
             // if guess_count == 0, then 0
@@ -73,7 +81,7 @@ impl Color {
             // if goal_count == 2, guess_count == 1, then 1
             // if goal_count == 1, guess_count == 2, then 1
             std::cmp::min(goal_count, guess_count)
-        }).collect::<Vec<_>>().try_into().expect("expected that zipping two arrays of 4 elements would be 4 elements")
+        }).collect::<Vec<_>>().try_into().expect("expected that zipping two arrays of 6 elements would be 6 elements")
     }
 }
 
@@ -132,7 +140,9 @@ impl GameState {
                 '2' => Color::Two,
                 '3' => Color::Three,
                 '4' => Color::Four,
-                other => panic!("expected 1, 2, 3, or 4, but found: {}", other),
+                '5' => Color::Five,
+                '6' => Color::Six,
+                other => panic!("expected 1-6, but found: {}", other),
             }
         }).collect::<Vec<_>>().try_into().expect("expected 4 inputs, but found another amount");
         self.guess(guess_row);
@@ -150,13 +160,13 @@ impl GameState {
             }
         }).unzip();
 
-        let leftover_goal_counts: [u8; 4] = leftover_goals.iter().fold([0; 4], |acc, opt_goal_item| {
+        let leftover_goal_counts: [u8; 6] = leftover_goals.iter().fold([0; 6], |acc, opt_goal_item| {
             match opt_goal_item {
                 None => acc,
                 Some(goal_item) => Color::combine_counts(acc, goal_item.count()),
             }
         });
-        let leftover_guess_counts: [u8; 4] = leftover_guess_rows.iter().fold([0; 4], |acc, opt_guess_item| {
+        let leftover_guess_counts: [u8; 6] = leftover_guess_rows.iter().fold([0; 6], |acc, opt_guess_item| {
             match opt_guess_item {
                 None => acc,
                 Some(guess_item) => Color::combine_counts(acc, guess_item.count()),

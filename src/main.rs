@@ -77,6 +77,11 @@ impl Color {
     }
 }
 
+// - AI chooses 4 colors 1-4
+// - player guess_rows up to 10 times 4 colors 1-4
+// - after each guess:
+//     + 1-4 "correct, wrong spot"
+//     + 1-4 "correct, right spot"
 #[derive(Debug, PartialEq, Eq)]
 pub struct GameState {
     rng: ChaCha20Rng,
@@ -119,9 +124,9 @@ impl GameState {
         self.guess_rows.push(guess_row);
     }
 
-    pub fn guess_io(&mut self) {
+    pub fn guess_io(&mut self) -> [Color; 4] { 
         let input = get_input_fn("> ".to_string());
-        self.guess(input.chars().map(|c| {
+        let guess_row = input.chars().map(|c| {
             match c {
                 '1' => Color::One,
                 '2' => Color::Two,
@@ -129,7 +134,9 @@ impl GameState {
                 '4' => Color::Four,
                 other => panic!("expected 1, 2, 3, or 4, but found: {}", other),
             }
-        }).collect::<Vec<_>>().try_into().expect("expected 4 inputs, but found another amount"));
+        }).collect::<Vec<_>>().try_into().expect("expected 4 inputs, but found another amount");
+        self.guess(guess_row);
+        guess_row
     }
 
     pub fn score_one(&self, guess_row: [Color; 4]) -> Score {
@@ -177,28 +184,19 @@ impl Default for Score {
     }
 }
 
-// - AI chooses 4 colors 1-4
-// - player guess_rows up to 10 times 4 colors 1-4
-// - after each guess:
-//     + 1-4 "correct, wrong spot"
-//     + 1-4 "correct, right spot"
-
-
-
 
 fn main() {
     let seed = [42u8; 32];
     let mut game_state = GameState::new(seed);
     println!("{:?}", game_state.goal_row);
     for _ in 0..10 {
-        game_state.guess_io();
+        let guess_row = game_state.guess_io();
         println!("{game_state}");
+
+        if game_state.score_one(guess_row).right_spot == 4 {
+            panic!("you won!");
+        }
+
         println!("--------------------------------------------------------");
     }
-
-    // // let example = Color::rand(&mut rng);
-    // // println!("{example:?}");
-    // // println!("{example}");
-    // let input = get_input_fn("Hello, world!".to_string());
-    // println!("{input:?}");
 }

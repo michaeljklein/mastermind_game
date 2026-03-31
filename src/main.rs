@@ -5,7 +5,7 @@ use chacha20::ChaCha20Rng;
 use rand::RngExt;
 use rand::rand_core::{SeedableRng};
 
-fn get_input_fn(label: String) -> String {
+pub fn get_input_fn(label: String) -> String {
     let mut s = String::new();
     print!("{}", label);
     let _ = stdout().flush();
@@ -86,7 +86,7 @@ pub struct GameState {
 
 impl Display for GameState {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        for guess_row in self.guess_rows.iter().rev() {
+        for guess_row in self.guess_rows.iter() {
             let score = self.score_one(*guess_row);
             writeln!(
                 f,
@@ -117,6 +117,19 @@ impl GameState {
 
     pub fn guess(&mut self, guess_row: [Color; 4]) {
         self.guess_rows.push(guess_row);
+    }
+
+    pub fn guess_io(&mut self) {
+        let input = get_input_fn("> ".to_string());
+        self.guess(input.chars().map(|c| {
+            match c {
+                '1' => Color::One,
+                '2' => Color::Two,
+                '3' => Color::Three,
+                '4' => Color::Four,
+                other => panic!("expected 1, 2, 3, or 4, but found: {}", other),
+            }
+        }).collect::<Vec<_>>().try_into().expect("expected 4 inputs, but found another amount"));
     }
 
     pub fn score_one(&self, guess_row: [Color; 4]) -> Score {
@@ -177,9 +190,11 @@ fn main() {
     let seed = [42u8; 32];
     let mut game_state = GameState::new(seed);
     println!("{:?}", game_state.goal_row);
-    game_state.guess([Color::One, Color::Two, Color::Three, Color::Four]);
-    game_state.guess([Color::One, Color::One, Color::One, Color::One]);
-    println!("{game_state}");
+    for _ in 0..10 {
+        game_state.guess_io();
+        println!("{game_state}");
+        println!("--------------------------------------------------------");
+    }
 
     // // let example = Color::rand(&mut rng);
     // // println!("{example:?}");

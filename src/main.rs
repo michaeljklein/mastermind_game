@@ -1,15 +1,16 @@
 use console_error_panic_hook::set_once as set_panic_hook;
 // use serde::{Deserialize, Serialize};
 use serde_derive::{Deserialize, Serialize};
+use serde_json;
 use wasm_bindgen::prelude::*;
 use web_sys::window;
 
 use std::fmt::{Display, Error, Formatter};
 use std::io::{Write, stdin, stdout};
 
-use rand_chacha::ChaCha20Rng;
 use rand::RngExt;
 use rand::rand_core::SeedableRng;
+use rand_chacha::ChaCha20Rng;
 
 type E = String;
 
@@ -31,8 +32,7 @@ pub fn get_input_fn(label: String) -> Result<String, E> {
     Ok(s)
 }
 
-#[derive(Serialize, Deserialize)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Color {
     One,
     Two,
@@ -282,17 +282,28 @@ fn run_game() -> Result<(), E> {
 // TODO: WIP
 
 #[wasm_bindgen]
-pub fn make_game_state(seed_str: &str) -> String {
+pub fn make_game_state(seed_str: &str) -> Result<String, E> {
     // TODO: seed_str -> seed
-    let mut seed = [42u8; 32];
+    let seed: Vec<u8> =
+        serde_json::from_str(seed_str).expect("expect serde_json deserialization to succeed");
+    let mut seed: [u8; 32] = seed
+        .try_into()
+        .map_err(|err| format!("make_game_state: invalid length for {err:?}"))?;
     rand::fill(&mut seed[..]);
     let game_state = GameState::new(seed).expect("expected new GameState to succeed");
-    let out_game_state_str = serde_json::to_string(&game_state).expect("expected serde_json serialization to succeed");
-    out_game_state_str
+    let out_game_state_str =
+        serde_json::to_string(&game_state).expect("expected serde_json serialization to succeed");
+    Ok(out_game_state_str)
 }
 
-fn run_game_step_wasm(input_str: &str, game_state: GameState) -> Result<GameState, E> {
-    unimplemented!("run_game_step")
+fn run_game_step_wasm(input_str: &str, mut game_state: GameState) -> Result<GameState, E> {
+    let input_vec: Vec<Color> =
+        serde_json::from_str(input_str).expect(&format!("expect input_str to succeed: {input_str}"));
+    let input_colors: [Color; 4] = input_vec
+        .try_into()
+        .map_err(|err| format!("run_game_step_wasm: invalid length for {err:?}"))?;
+    game_state.guess(input_colors);
+    Ok(game_state)
 }
 
 #[wasm_bindgen]
@@ -300,7 +311,8 @@ pub fn run_game_step(input_str: &str, game_state_str: &str) -> String {
     // TODO: pseudocode
     let game_state = serde_json::from_str(game_state_str).unwrap();
     let output_game_state = run_game_step_wasm(input_str, game_state).unwrap();
-    let out_game_state_str = serde_json::to_string(&output_game_state).expect("expected serde_json serialization to succeed");
+    let out_game_state_str = serde_json::to_string(&output_game_state)
+        .expect("expected serde_json serialization to succeed");
     out_game_state_str
 }
 

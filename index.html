@@ -20,7 +20,11 @@
 <script type="module">
     addEventListener("TrunkApplicationStarted", (event) => {
         console.log("application started - bindings:", window.wasmBindings, "WASM:", event.detail.wasm);
-        console.log("run_game_step:", window.wasmBindings.run_game_step("1111", "{}"));
+        let seed = new Uint8Array(32);
+        window.crypto.getRandomValues(seed);
+        let game_state_str = window.wasmBindings.make_game_state(JSON.stringify(Array.from(seed)));
+        console.log("game_state_str: ", game_state_str);
+        console.log("run_game_step: ", window.wasmBindings.run_game_step("[\"One\",\"One\",\"One\",\"One\"]", game_state_str));
         // You can also run this via the WASM instance in the details
         // event.detail.wasm.wasm_ffi();
     });

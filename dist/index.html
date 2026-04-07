@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Trunk | Vanilla | web-sys</title>
+
+    <!-- <link data-trunk rel="scss" href="src/index.scss"/> -->
+    <!-- <link data-trunk rel="css" href="src/app.css"/> -->
+    <!-- <link data-trunk data-no-minify rel="css" href="src/not_minified.css"/> -->
+    <base href="/" />
+<link rel="modulepreload" href="/mastermind_game-70942f7f2830fc8d.js" crossorigin=anonymous integrity="sha384-dlJTkK5i+KvbaYUxMIPFtf4bD93QUawT5IwIn9Gv6JGa0jOHq4Xb3vI19mNtvadU"><link rel="preload" href="/mastermind_game-70942f7f2830fc8d_bg.wasm" crossorigin=anonymous integrity="sha384-Xi3HP7LDNYb2hjPjRQouHdE/bNbkB3zwlZx03uv6HDs5Q9n6BqBQ8TvSAyD3f1AY" as="fetch" type="application/wasm"></head>
+<body>
+    
+<script type="module" nonce="iyk4UvWF5GXQvQdiJgtjnw==">
+import init, * as bindings from '/mastermind_game-70942f7f2830fc8d.js';
+const wasm = await init({ module_or_path: '/mastermind_game-70942f7f2830fc8d_bg.wasm' });
+
+
+window.wasmBindings = bindings;
+
+
+dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
+
+</script>
+    <!-- <script data-trunk src="src/script.js"></script> -->
+    <!-- <script data-trunk src="src/script.mjs" type="module"></script> -->
+</body>
+<!-- <script>testFromJavaScript();</script> -->
+
+<script type="module">
+    addEventListener("TrunkApplicationStarted", (event) => {
+        console.log("application started - bindings:", window.wasmBindings, "WASM:", event.detail.wasm);
+        console.log("run_game_step:", window.wasmBindings.run_game_step("1111", "{}"));
+        // You can also run this via the WASM instance in the details
+        // event.detail.wasm.wasm_ffi();
+    });
+</script>
+
+</html>

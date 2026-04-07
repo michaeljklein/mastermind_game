@@ -1,7 +1,13 @@
+use console_error_panic_hook::set_once as set_panic_hook;
+// use serde::{Deserialize, Serialize};
+use serde_derive::{Deserialize, Serialize};
+use wasm_bindgen::prelude::*;
+use web_sys::window;
+
 use std::fmt::{Display, Error, Formatter};
 use std::io::{Write, stdin, stdout};
 
-use chacha20::ChaCha20Rng;
+use rand_chacha::ChaCha20Rng;
 use rand::RngExt;
 use rand::rand_core::SeedableRng;
 
@@ -25,6 +31,7 @@ pub fn get_input_fn(label: String) -> Result<String, E> {
     Ok(s)
 }
 
+#[derive(Serialize, Deserialize)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Color {
     One,
@@ -113,7 +120,7 @@ impl Color {
 // - after each guess:
 //     + 1-4 "correct, wrong spot"
 //     + 1-4 "correct, right spot"
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GameState {
     rng: ChaCha20Rng,
     goal_row: [Color; 4],
@@ -272,9 +279,32 @@ fn run_game() -> Result<(), E> {
     Ok(())
 }
 
+// TODO: WIP
+
+#[wasm_bindgen]
+pub fn make_game_state(seed_str: &str) -> String {
+    // TODO: seed_str -> seed
+    let mut seed = [42u8; 32];
+    rand::fill(&mut seed[..]);
+    let game_state = GameState::new(seed).expect("expected new GameState to succeed");
+    let out_game_state_str = serde_json::to_string(&game_state).expect("expected serde_json serialization to succeed");
+    out_game_state_str
+}
+
+fn run_game_step_wasm(input_str: &str, game_state: GameState) -> Result<GameState, E> {
+    unimplemented!("run_game_step")
+}
+
+#[wasm_bindgen]
+pub fn run_game_step(input_str: &str, game_state_str: &str) -> String {
+    // TODO: pseudocode
+    let game_state = serde_json::from_str(game_state_str).unwrap();
+    let output_game_state = run_game_step_wasm(input_str, game_state).unwrap();
+    let out_game_state_str = serde_json::to_string(&output_game_state).expect("expected serde_json serialization to succeed");
+    out_game_state_str
+}
+
+// TODO: WIP
 fn main() {
-    match run_game() {
-        Ok(()) => (),
-        Err(err) => println!("{err}"),
-    }
+    set_panic_hook();
 }
